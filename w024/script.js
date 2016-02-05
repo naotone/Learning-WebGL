@@ -1,4 +1,4 @@
-onload = function(){
+1onload = function(){
   var c = document.getElementById('canvas');
   c.width = 500;
   c.height = 500;

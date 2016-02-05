@@ -70,8 +70,8 @@ onload = function(){
   var count = 0;
 
   gl.enable(gl.DEPTH_TEST);
-	gl.depthFunc(gl.LEQUAL);
-	gl.enable(gl.CULL_FACE);
+  gl.depthFunc(gl.LEQUAL);
+  gl.enable(gl.CULL_FACE);
 
   (function(){
     gl.clearColor(0.0, 0.0, 0.0, 1,0);
@@ -207,13 +207,13 @@ onload = function(){
         var rx = rr * Math.cos(tr);
         var rz = rr * Math.sin(tr);
         if(color){
-					var tc = color;
-				}else{
-					tc = hsva(360 / column * j, 1, 1, 1);
-				}
-				pos.push(tx, ty, tz);
-				nor.push(rx, ry, rz);
-				col.push(tc[0], tc[1], tc[2], tc[3]);
+          var tc = color;
+        }else{
+          tc = hsva(360 / column * j, 1, 1, 1);
+        }
+        pos.push(tx, ty, tz);
+        nor.push(rx, ry, rz);
+        col.push(tc[0], tc[1], tc[2], tc[3]);
       }
     }
     for(i = 0; i < row; i++){
