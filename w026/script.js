@@ -14,36 +14,53 @@ onload = function(){
   // Get attributeLocation
   var attLocation = [];
   attLocation[0] = gl.getAttribLocation(prg, 'position');
-  attLocation[1] = gl.getAttribLocation(prg, 'normal');
-  attLocation[2] = gl.getAttribLocation(prg, 'color')
+  attLocation[1] = gl.getAttribLocation(prg, 'color');
+  attLocation[2] = gl.getAttribLocation(prg, 'textureCoord');
 
   // Number of attribute elements
   var attStride = [];
   attStride[0] = 3;　
-  attStride[1] = 3;
-  attStride[2] = 4;
+  attStride[1] = 4;
+  attStride[2] = 2;
 
-  var torusData = torus(64, 64, 0.5, 1.5, [0.75, 0.25, 0.25, 1.0]);
-  var tPosition = create_vbo(torusData.p);
-  var tNormal = create_vbo(torusData.n);
-  var tColor = create_vbo(torusData.c);
-  var tVBOList = [tPosition, tNormal, tColor];
-  var tIndex = create_ibo(torusData.i);
+  var position = [
+    -1.0, 1.0, 0.0,
+    1.0, 1.0, 0.0,
+    -1.0, -1.0, 0.0,
+    1.0, -1.0, 0,0
+  ]
 
-  var sphereData = sphere(64, 64, 2.0, [0.25, 0.25, 0.75, 1.0]);
-  var sPosition = create_vbo(sphereData.p);
-  var sNormal = create_vbo(sphereData.n);
-  var sColor = create_vbo(sphereData.c);
-  var sVBOList = [sPosition, sNormal, sColor];
-  var sIndex = create_ibo(sphereData.i)
+  var color = [
+    1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0
+  ]
+
+   var textureCoord = [
+    0.0, 0.0,
+    1.0, 0.0,
+    0.0, 1.0,
+    1.0, 1.0
+   ]
+
+   var index = [
+     0, 1, 2,
+     3, 2, 1
+   ]
+
+   var vPosition = create_vbo(position);
+   var vColor = create_vbo(color);
+   var vTextureCoord = create_vbo(textureCoord);
+   var VBOList = [vPosition, vColor, vTextureCoord];
+   var iIndex = create_ibo(index);
+
+   set_attribute(VBOList, attLocation, attStride);
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iIndex);
 
   var uniLocation = [];
   uniLocation[0] = gl.getUniformLocation(prg, 'mvpMatrix');
-  uniLocation[1] = gl.getUniformLocation(prg, 'mMatrix');
-  uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
-  uniLocation[3] = gl.getUniformLocation(prg, 'lightPosition');
-  uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection')
-  uniLocation[5] = gl.getUniformLocation(prg, 'ambientColor');
+  uniLocation[1] = gl.getUniformLocation(prg, 'texture');
 
   // minMatrix.js
   var m = new matIV();
@@ -53,25 +70,22 @@ onload = function(){
   var pMatrix = m.identity(m.create());
   var tmpMatrix = m.identity(m.create());
   var mvpMatrix = m.identity(m.create());
-  var invMatrix = m.identity(m.create());
 
   // view x projection coordinate transformation matrix
 
-  var lightPosition = [0.0, 0.0, 0.0];
-  var eyeDirection = [0.0, 0.0, 20.0];
-  var ambientColor = [0.1, 0.1, 0.1, 1.0];
-
-  m.lookAt(eyeDirection, [0, 0, 0], [0, 1, 0], vMatrix);
+  m.lookAt([0.0, 2.0, 5.0], [0, 0, 0], [0, 1, 0], vMatrix);
   m.perspective(45, c.width / c.height, 0.1, 100, pMatrix);
   m.multiply(pMatrix, vMatrix, tmpMatrix);
 
-
-
-  var count = 0;
-
   gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
-	gl.enable(gl.CULL_FACE);
+	// gl.enable(gl.CULL_FACE);
+
+  gl.activeTexture(gl.TEXTURE0);
+  var texture = null;
+  create_texture('/images/texture.jpg');
+
+  var count = 0;
 
   (function(){
     gl.clearColor(0.0, 0.0, 0.0, 1,0);
@@ -80,43 +94,17 @@ onload = function(){
 
     count++;
     var rad = (count % 360) * Math.PI / 180;
-    var tx = Math.cos(rad)*3.5;
-    var ty = Math.sin(rad)*3.5;
-    var tz = Math.sin(rad)*3.5;
 
     //Model 1
-    set_attribute(tVBOList, attLocation, attStride);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tIndex);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(uniLocation[1], 0);
 
     m.identity(mMatrix);
-    m.translate(mMatrix, [tx, -ty, -tz], mMatrix);
-    m.rotate(mMatrix, -rad, [0, 1, 1], mMatrix);
+    m.rotate(mMatrix, rad, [0, 1, 0], mMatrix);
     m.multiply(tmpMatrix, mMatrix, mvpMatrix);
-    m.inverse(mMatrix, invMatrix);
 
     gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
-    gl.uniformMatrix4fv(uniLocation[1], false, mMatrix);
-    gl.uniformMatrix4fv(uniLocation[2], false, invMatrix);
-    gl.uniform3fv(uniLocation[3], lightPosition);
-    gl.uniform3fv(uniLocation[4], eyeDirection);
-    gl.uniform4fv(uniLocation[5], ambientColor);
-
-    gl.drawElements(gl.TRIANGLES, torusData.i.length, gl.UNSIGNED_SHORT, 0);
-
-    //Model2
-    set_attribute(sVBOList, attLocation, attStride);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sIndex);
-
-    m.identity(mMatrix);
-    m.translate(mMatrix, [-tx, ty, tz], mMatrix);
-    m.multiply(tmpMatrix, mMatrix, mvpMatrix);
-    m.inverse(mMatrix, invMatrix);
-
-    gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
-    gl.uniformMatrix4fv(uniLocation[1], false, mMatrix);
-    gl.uniformMatrix4fv(uniLocation[2], false, invMatrix);
-
-    gl.drawElements(gl.TRIANGLES, sphereData.i.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
 
     gl.flush();
 
@@ -200,7 +188,7 @@ onload = function(){
 
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-      gl.generateMinimap(gl.TEXTURE_2D);
+      gl.generateMipmap(gl.TEXTURE_2D);
       gl.bindTexture(gl.TEXTURE_2D, null);
       texture = tex;
     };
@@ -273,6 +261,8 @@ onload = function(){
     }
     return {p: pos, n: nor, c: col, i: idx};
   }
+
+
 
   function hsva(h, s, v, a){
     if(s > 1 || v > 1 || a > 1){return;}
